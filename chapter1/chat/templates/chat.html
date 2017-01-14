@@ -32,7 +32,7 @@
       if (!window["WebSocket"]) {
         alert("エラー：WebSocket 非対応ブラウザです．");
       } else {
-        socket = new WebSocket("ws://localhost:8080/room");
+        socket = new WebSocket("ws://{{.Host}}/room");
         socket.onclose = function() {
           alert("接続が終了しました．");
         }
