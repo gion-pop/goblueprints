@@ -30,7 +30,9 @@ func main() {
 	addr := flag.String("addr", ":8080", "アプリケーションのアドレス")
 	flag.Parse() // 引数を解釈
 	r := NewRoom()
-	http.Handle("/", &templateHandler{filename: "chat.html"})
+	http.Handle("/", MustAuth(&templateHandler{filename: "chat.html"}))
+	http.Handle("/login", &templateHandler{filename: "login.html"})
+	http.HandleFunc("/auth/", loginHandler)
 	http.Handle("/room", r)
 	// チャットルームを開始
 	go r.run()
