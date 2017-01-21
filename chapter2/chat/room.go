@@ -6,11 +6,12 @@ import (
 
 	"github.com/gion-xy/goblueprints/chapter1/trace"
 	"github.com/gorilla/websocket"
+	"github.com/stretchr/objx"
 )
 
 type room struct {
 	// forward は他の client に転送するためのメッセージを保持するチャネル
-	forward chan []byte
+	forward chan *message
 	// join は room に参加しようとしている client のためのチャネル
 	join chan *client
 	// leave は room から退室しようとしているクライアントのためのチャネル
@@ -23,7 +24,7 @@ type room struct {
 
 func NewRoom() *room {
 	return &room{
-		forward: make(chan []byte),
+		forward: make(chan *message),
 		join:    make(chan *client),
 		leave:   make(chan *client),
 		clients: make(map[*client]bool),
@@ -46,6 +47,7 @@ func (r *room) run() {
 		case msg := <-r.forward:
 			// room にいるすべての client にメッセージを転送
 			for client := range r.clients {
+				r.tracer.Trace("メッセージを受信: ", msg.Message)
 				select {
 				case client.send <- msg:
 					// 送信成功
@@ -77,10 +79,18 @@ func (r *room) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		log.Fatal("ServeHTTP:", err)
 		return
 	}
+
+	authCookie, err := req.Cookie("auth")
+	if err != nil {
+		log.Fatal("クッキーの取得に失敗:", err)
+		return
+	}
+
 	client := &client{
-		socket: socket,
-		send:   make(chan []byte, messageBufferSize),
-		room:   r,
+		socket:   socket,
+		send:     make(chan *message, messageBufferSize),
+		room:     r,
+		userData: objx.MustFromBase64(authCookie.Value),
 	}
 	r.join <- client
 	defer func() { r.leave <- client }()
