@@ -41,6 +41,7 @@
           var msg = JSON.parse(e.data);
           messages.append(
             $("<li>").append(
+              $("<span>").text(new Date(msg.When).toLocaleString('ja-JP') + " -- "),
               $("<strong>").text(msg.Name + ": "),
               $("<span>").text(msg.Message)
             )
